@@ -2,6 +2,9 @@ import requests # make requests to the server, connection with the fastAPI, GET 
 
 API_URL = "http://127.0.0.1:8000" #Server URL
 
+def bool_to_portuguese(value):
+  return "sim" if value else "não"
+
 class VehicleAgent:
   def filter_vehicles(self, text):
     filters = {}
@@ -32,7 +35,8 @@ class VehicleAgent:
     
     print(f'Found {len(vehicles)} vehicles:')
     for v in vehicles:
-      print(f'  {v["brand"]} {v["model"]} - R$ {v["price_cents"]/100:,.0f}')
+      sunroof_text = bool_to_portuguese(v.get("sunroof", False))
+      print(f'  {v["brand"]} {v["model"]} - R$ {v["price_cents"]/100:,.0f} - Teto solar: {sunroof_text}')
 
 if __name__ == "__main__":
   agent = VehicleAgent() # create an instance of the agent
