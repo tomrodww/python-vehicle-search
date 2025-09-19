@@ -2,9 +2,6 @@ import requests # make requests to the server, connection with the fastAPI, GET 
 
 API_URL = "http://127.0.0.1:8000" #Server URL
 
-def bool_to_portuguese(value):
-  return "sim" if value else "não"
-
 class VehicleAgent:
   def __init__(self):
     self.filtered_vehicles = []
@@ -38,11 +35,28 @@ class VehicleAgent:
     data = response.json()
     return data['vehicles']
 
-  def display_vehicles_list(self):
-    if self.filters:
-      print(f'Listando veículos filtrados por: {self.filters}')
-    else:
-      print('Listando todos os veículos.')
+
+
+  def display_vehicles_table(self):
+    if not self.filtered_vehicles:
+      return
+    
+    # table header
+    print("\n" + "="*160)
+    print(f"{'#':<3} {'Marca':<12} {'Modelo':<15} {'Ano':<6} {'Cor':<10} {'Preço':<12} {'Combustível':<12} {'Transmissão':<12} {'Teto solar':<12} {'Categoria':<12} {'Motor':<12} {'Quilometragem':<15} ")
+    print("="*160)
+    
+    # table rows
+    for i, v in enumerate(self.filtered_vehicles, 1):
+      price = f"R$ {v['price_cents']/100:,.0f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+      sunroof = "Sim" if v['sunroof'] else "Não"
+      mileage = f"{v['mileage']:,}".replace(',', '.')
+
+      
+      print(f"{i:<3} {v['brand']:<12} {v['model']:<15} {v['year']:<6} {v['color']:<10} {price:<12} {v['fuel_type']:<12} {v['transmission']:<12} {sunroof:<12} {v['category']:<12} {v['engine']:<12} {mileage:<15}")
+    
+    print("="*160)
+    print(f"Total: {len(self.filtered_vehicles)} veículos encontrados\n")
 
   def run(self):
     while True:
@@ -51,10 +65,12 @@ class VehicleAgent:
         
         # Handle special commands first
         if user_input in ['listar', 'mostrar', 'exibir']:
-          self.display_vehicles_list()
           if self.filtered_vehicles:
-            for v in self.filtered_vehicles:
-              print(f'  {v["brand"]} {v["model"]} - R$ {v["price_cents"]/100:,.0f}')
+            if self.filters:
+              print(f'Listando veículos filtrados por: {self.filters}')
+            else:
+              print('Listando todos os veículos.')
+            self.display_vehicles_table()
           else:
             print("Nenhum veículo filtrado. Faça uma busca primeiro.")
           continue
