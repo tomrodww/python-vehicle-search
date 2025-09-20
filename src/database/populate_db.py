@@ -1,25 +1,9 @@
-from models import Vehicles, SessionLocal
-from faker import Faker
+from src.models import Vehicles, SessionLocal
+from src.constants import BRANDS, MODELS, COLORS, ENGINES, TRANSMISSIONS, CATEGORIES, FUEL_TYPES, MIN_YEAR, MAX_YEAR, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MIN_MILEAGE, MAX_MILEAGE
 import random
-
-fake = Faker()
 
 def bool_to_portuguese(value):
   return "Sim" if value else "Não"
-
-BRANDS = ['Volkswagen', 'Fiat', 'Chevrolet', 'Ford', 'Honda', 'Toyota', 'Hyundai', 'Nissan', 'Renault', 'Peugeot']
-MODELS = {
-    'Volkswagen': ['Gol', 'Fox', 'Polo', 'Jetta'],
-    'Fiat': ['Uno', 'Palio', 'Strada', 'Argo'],
-    'Chevrolet': ['Onix', 'Prisma', 'Celta', 'Corsa'],
-    'Ford': ['Ka', 'Fiesta', 'Focus', 'EcoSport'],
-    'Honda': ['Civic', 'Fit', 'City', 'HR-V'],
-    'Toyota': ['Corolla', 'Etios', 'Yaris', 'Hilux'],
-    'Hyundai': ['HB20', 'Creta', 'Tucson', 'Elantra'],
-    'Nissan': ['March', 'Versa', 'Kicks', 'Sentra'],
-    'Renault': ['Sandero', 'Captur', 'Duster', 'Kwid'],
-    'Peugeot': ['208', '308', '2008', '3008']
-}
 
 def create_vehicles_db():    
   # Create database session
@@ -33,14 +17,14 @@ def create_vehicles_db():
       # Generate random values for each vehicle
       brand = random.choice(BRANDS)
       model = random.choice(MODELS[brand])
-      year = random.randint(2010, 2025)
-      price_cents = random.randint(1000000, 25000000)
-      color = random.choice(['Vermelho', 'Azul', 'Verde', 'Cinza', 'Preto', 'Branco', 'Prata'])
-      mileage = random.randint(0, 150000)
-      engine = random.choice(['1.0L', '1.3L', '1.5L', '2.0L', '3.0L'])
-      transmission = random.choice(['Manual', 'Automático'])
-      category = random.choice(['Sedan', 'SUV', 'Hatchback', 'Pickup', 'Van'])
-      fuel_type = random.choice(['Gasolina', 'Diesel', 'Elétrico', 'Híbrido'])
+      year = random.randint(MIN_YEAR, MAX_YEAR)
+      price_cents = random.randint(MIN_PRICE_CENTS, MAX_PRICE_CENTS)
+      color = random.choice(COLORS)
+      mileage = random.randint(MIN_MILEAGE, MAX_MILEAGE)
+      engine = random.choice(ENGINES)
+      transmission = random.choice(TRANSMISSIONS)
+      category = random.choice(CATEGORIES)
+      fuel_type = random.choice(FUEL_TYPES)
       sunroof = random.choice([True, False])
       
       vehicle_data = {

@@ -1,4 +1,5 @@
 import requests # make requests to the server, connection with the fastAPI, GET method
+from src.constants import BRANDS, COLORS, MIN_YEAR, MAX_YEAR, MODELS, ENGINES, TRANSMISSIONS, CATEGORIES, FUEL_TYPES, MIN_PRICE, MAX_PRICE, MIN_MILEAGE, MAX_MILEAGE
 
 API_URL = "http://127.0.0.1:8000" #Server URL
 
@@ -9,33 +10,75 @@ class VehicleAgent:
     
   def get_filters(self, text):
     # filter brand
-    brands = ['bmw', 'honda', 'tesla', 'volkswagen', 'fiat', 'chevrolet', 'ford', 'toyota', 'hyundai', 'nissan', 'renault', 'peugeot']
-    for brand in brands:
-      if brand in text.lower():
-        self.filters['brand'] = brand
+    for brand in BRANDS:
+      if brand.lower() in text.lower():
+        self.filters['brand'] = brand.lower()
         break
 
     # filter color
-    colors = ['vermelho', 'azul', 'verde', 'cinza', 'preto', 'branco', 'prata']
-    for color in colors:
-      if color in text.lower():
-        self.filters['color'] = color
+    for color in COLORS:
+      if color.lower() in text.lower():
+        self.filters['color'] = color.lower()
         break
 
     # filter year
     if text.isdigit() and len(text) == 4:
       year = int(text)
-      if 2010 <= year <= 2025:
+      if MIN_YEAR <= year <= MAX_YEAR:
         self.filters['year'] = str(year)
     
+    # filter model
+    for model in MODELS:
+      if model.lower() in text.lower():
+        self.filters['model'] = model.lower()
+        break
+    
+    # filter engine
+    for engine in ENGINES:
+      if engine.lower() in text.lower():
+        self.filters['engine'] = engine.lower()
+        break
+    
+    # filter transmission
+    for transmission in TRANSMISSIONS:
+      if transmission.lower() in text.lower():
+        self.filters['transmission'] = transmission.lower()
+        break
+
+    # filter fuel type
+    for fuel_type in FUEL_TYPES:
+      if fuel_type.lower() in text.lower():
+        self.filters['fuel_type'] = fuel_type.lower()
+        break
+    
+    # filter category
+    for category in CATEGORIES:
+      if category.lower() in text.lower():
+        self.filters['category'] = category.lower()
+        break
+    
+    # filter sunroof
+    if 'teto solar' in text.lower():
+      self.filters['sunroof'] = True
+    else:
+      self.filters['sunroof'] = False
+
     return self.filters
   
   def search(self):
-    response = requests.get(f"{API_URL}/vehicles-list")
+    mcp_request = {
+      "action": "search_vehicles",
+      "filters": self.filters
+    }
+    
+    response = requests.post(f"{API_URL}/mcp", json=mcp_request)
     data = response.json()
-    return data['vehicles']
-
-
+    
+    if data.get("success"):
+      return data.get("data", [])
+    else:
+      print(f"MCP Error: {data.get('message', 'Unknown error')}")
+      return []
 
   def display_vehicles_table(self):
     if not self.filtered_vehicles:
@@ -126,6 +169,3 @@ class VehicleAgent:
       
 
 
-if __name__ == "__main__":
-  agent = VehicleAgent() # create an instance of the agent
-  agent.run() # run the agent

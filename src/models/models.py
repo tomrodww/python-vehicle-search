@@ -39,10 +39,3 @@ engine = create_engine('sqlite:///vehicles.db') # create database
 Base.metadata.create_all(engine) # create tables in the database
 
 SessionLocal = sessionmaker(bind=engine) # create a session to interact with the database
-
-def get_db(): # get a database session
-  db = SessionLocal()
-  try:
-    yield db # endpoint gets database session
-  finally:
-    db.close() # close the database session
