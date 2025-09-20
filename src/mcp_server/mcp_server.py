@@ -29,6 +29,22 @@ def mcp_endpoint(request: MCPRequest):
                     query = query.filter(Vehicles.year == request.filters["year"])
                 if request.filters.get("color"):
                     query = query.filter(Vehicles.color.ilike(f"%{request.filters['color']}%"))
+                if request.filters.get("model"):
+                    query = query.filter(Vehicles.model.ilike(f"%{request.filters['model']}%"))
+                if request.filters.get("engine"):
+                    query = query.filter(Vehicles.engine.ilike(f"%{request.filters['engine']}%"))
+                if request.filters.get("transmission"):
+                    query = query.filter(Vehicles.transmission.ilike(f"%{request.filters['transmission']}%"))
+                if request.filters.get("category"):
+                    query = query.filter(Vehicles.category.ilike(f"%{request.filters['category']}%"))
+                if request.filters.get("fuel_type"):
+                    query = query.filter(Vehicles.fuel_type.ilike(f"%{request.filters['fuel_type']}%"))
+                if request.filters.get("sunroof"):
+                    query = query.filter(Vehicles.sunroof == request.filters["sunroof"])
+                if request.filters.get("price"):
+                    query = query.filter(Vehicles.price_cents >= request.filters["price"])
+                if request.filters.get("mileage"):
+                    query = query.filter(Vehicles.mileage >= request.filters["mileage"])
                 
                 vehicles = query.all()
                 return MCPResponse(success=True, data=[vehicle.to_dict() for vehicle in vehicles], total=len(vehicles), message=f"Encontrei {len(vehicles)} veículos")
