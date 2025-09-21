@@ -30,7 +30,8 @@ A aplicação tem três partes principais:
 ## Início Rápido
 
 **Passo 1: Clonar o Repositório**
-git clone https://github.com/seuusuario/python-vehicle-search.gitcd python-vehicle-search
+git clone https://github.com/seuusuario/python-vehicle-search.git
+cd python-vehicle-search
 
 **Passo 2: Verificar Versão do Python**
 python --version# Deve mostrar Python 3.17 ou superior
