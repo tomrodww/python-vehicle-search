@@ -1,7 +1,10 @@
 import re
 import unicodedata
-import requests # make requests to the server, connection with the fastAPI
-from src.constants import BRANDS, COLORS, MIN_YEAR, MAX_YEAR, MODELS, ENGINES, TRANSMISSIONS, CATEGORIES, FUEL_TYPES, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MIN_MILEAGE, MAX_MILEAGE
+import requests  # make requests to the server, connection with the fastAPI
+from src.constants import (
+    BRANDS, MIN_YEAR, MAX_YEAR, MODELS, ENGINES, 
+    TRANSMISSIONS, CATEGORIES, FUEL_TYPES
+)
 
 API_URL = "http://127.0.0.1:8000" #Server URL
 
@@ -44,14 +47,15 @@ class VehicleAgent:
                 filters['color'] = color.lower()
                 break
 
-        # filter year
-        year_match = re.search(r'\b(19\d{2}|20\d{2})\b', text)
-        if year_match:
+        # filter year - handle multiple years and ranges
+        year_matches = re.finditer(r'\b(19\d{2}|20\d{2})\b', text)
+        for year_match in year_matches:
             year = int(year_match.group(1))
             if MIN_YEAR <= year <= MAX_YEAR:
-                if 'até' in text.lower() or 'antes' in text.lower() or 'máximo' in text.lower():
+                year_context = text[max(0, year_match.start()-20):year_match.end()+20].lower() #get 20 digits before and after the year to be checked.
+                if ('até' in year_context or 'antes' in year_context or 'máximo' in year_context) and ('ano' in year_context or ('de' in year_context and 'reais' not in year_context and 'km' not in year_context)):
                     filters['year_max'] = year
-                elif 'a partir' in text.lower() or 'após' in text.lower() or 'mínimo' in text.lower():
+                elif ('a partir' in year_context or 'após' in year_context or 'mínimo' in year_context):
                     filters['year_min'] = year
                 else:
                     filters['year'] = str(year)
@@ -97,19 +101,22 @@ class VehicleAgent:
             filters['sunroof'] = True
 
         # filter mileage
-        mileage_match = re.search(r'\b(\d+)\s*(?:mil\s+km|mil\s+quilômetros?|km|quilômetros?)\b', text.lower())
-        if mileage_match:
-            number = int(mileage_match.group(1))
+        mileage_matches = re.finditer(r'\b(\d+)\s*(?:mil\s+km|mil\s+quilômetros?|km|quilômetros?)\b', text.lower())
+        for match in mileage_matches:
+            number = int(match.group(1))
             
             # if 'mil' multiply by 1000
-            if 'mil' in mileage_match.group(0):
+            if 'mil' in match.group(0):
                 mileage = number * 1000
             else:
                 mileage = number
             
-            if 'até' in text.lower() or 'antes' in text.lower() or 'máximo' in text.lower():
+            # get 20 digits before and after the mileage to be checked
+            mileage_context = text[max(0, match.start()-20):match.end()+20].lower()
+            
+            if 'até' in mileage_context or 'antes' in mileage_context or 'máximo' in mileage_context:
                 filters['mileage_max'] = mileage
-            elif 'a partir' in text.lower() or 'após' in text.lower() or 'mínimo' in text.lower():
+            elif 'a partir' in mileage_context or 'após' in mileage_context or 'mínimo' in mileage_context:
                 filters['mileage_min'] = mileage
             else:
                 filters['mileage_max'] = mileage  # makes max as default

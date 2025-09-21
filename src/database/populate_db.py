@@ -1,5 +1,9 @@
 from src.models import Vehicles, SessionLocal
-from src.constants import BRANDS, MODELS, COLORS, ENGINES, TRANSMISSIONS, CATEGORIES, FUEL_TYPES, MIN_YEAR, MAX_YEAR, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MIN_MILEAGE, MAX_MILEAGE
+from src.constants import (
+    BRANDS, MODELS, COLORS, ENGINES, TRANSMISSIONS, CATEGORIES, 
+    FUEL_TYPES, MIN_YEAR, MAX_YEAR, MIN_PRICE_CENTS, MAX_PRICE_CENTS, 
+    MIN_MILEAGE, MAX_MILEAGE
+)
 import random
 
 def bool_to_portuguese(value):

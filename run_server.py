@@ -1,5 +1,6 @@
 # simplifying the server command start, was "python -m src.mcp_server.mcp_server" and now is "python run_server.py"
-import sys, os
+import sys
+import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
