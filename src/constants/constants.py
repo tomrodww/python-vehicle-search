@@ -26,7 +26,7 @@ MODELS = {
 }
 
 # Engine options
-ENGINES = ['1.0L', '1.3L', '1.5L', '2.0L', '3.0L']
+ENGINES = ['1.0', '1.3', '1.5', '2.0', '3.0']
 
 # Transmission options
 TRANSMISSIONS = ['Manual', 'Automático']

@@ -1,5 +1,6 @@
 import re
-import requests # make requests to the server, connection with the fastAPI, GET method
+import unicodedata
+import requests # make requests to the server, connection with the fastAPI
 from src.constants import BRANDS, COLORS, MIN_YEAR, MAX_YEAR, MODELS, ENGINES, TRANSMISSIONS, CATEGORIES, FUEL_TYPES, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MIN_MILEAGE, MAX_MILEAGE
 
 API_URL = "http://127.0.0.1:8000" #Server URL
@@ -8,6 +9,16 @@ class VehicleAgent:
     def __init__(self):
         self.filtered_vehicles = []
         self.filters = {}
+    
+    def normalize_text(self, text):
+        if not text:
+            return ""
+        normalized = unicodedata.normalize('NFD', text) #decompose the text into its base characters and accents
+        without_accents = ""
+        for c in normalized:
+            if unicodedata.category(c) != 'Mn':
+                without_accents += c
+        return without_accents.lower()
                 
     def get_filters(self, text):
         filters = {}
@@ -65,19 +76,19 @@ class VehicleAgent:
         
         # filter transmission
         for transmission in TRANSMISSIONS:
-            if transmission.lower() in text.lower():
+            if self.normalize_text(transmission) in self.normalize_text(text):
                 filters['transmission'] = transmission.lower()
                 break
 
-        # filter fuel type
+        # filter fuel type - use accent normalization
         for fuel_type in FUEL_TYPES:
-            if fuel_type.lower() in text.lower():
+            if self.normalize_text(fuel_type) in self.normalize_text(text):
                 filters['fuel_type'] = fuel_type.lower()
                 break
         
-        # filter category
+        # filter category - use accent normalization
         for category in CATEGORIES:
-            if category.lower() in text.lower():
+            if self.normalize_text(category) in self.normalize_text(text):
                 filters['category'] = category.lower()
                 break
         
@@ -317,8 +328,18 @@ class VehicleAgent:
                 else:
                     # if no filters applied, show error 
                     print(f'Filtro "{user_input}" não reconhecido.')
-                    print('Filtros disponíveis: marcas (BMW, Honda, etc.), cores (vermelho, azul, etc.), anos (2020-2025)')
-                    print('Filtros atuais mantidos:')
+                    print('Filtros disponíveis:')
+                    print('  • Marcas: BMW, Honda, Tesla, Volkswagen, Fiat, Chevrolet, Ford, Toyota, Hyundai, Nissan, Renault, Peugeot')
+                    print('  • Cores: vermelho, azul, verde, cinza, preto, branco, prata')
+                    print('  • Anos: 2010-2025 (ex: "ano 2019", "até 2020", "a partir de 2018")')
+                    print('  • Motores: 1.0, 1.3, 1.5, 2.0, 3.0 (ex: "motor 1.5")')
+                    print('  • Transmissão: manual, automático')
+                    print('  • Combustível: gasolina, diesel, elétrico, híbrido')
+                    print('  • Categoria: sedan, suv, hatchback, pickup, van')
+                    print('  • Quilometragem: ex: "50 mil km", "até 100 mil km"')
+                    print('  • Preço: ex: "R$ 50 mil", "até R$ 100 mil"')
+                    print('  • Teto solar: "teto solar"')
+                    print('Filtros atuais:')
                     for filter_display in self.format_filters_for_display():
                         print(f'  • {filter_display}')
             except Exception as e:
