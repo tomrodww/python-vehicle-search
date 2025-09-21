@@ -27,6 +27,10 @@ def mcp_endpoint(request: MCPRequest):
                     query = query.filter(Vehicles.brand.ilike(f"%{request.filters['brand']}%"))
                 if request.filters.get("year"):
                     query = query.filter(Vehicles.year == request.filters["year"])
+                if request.filters.get("year_min"):
+                    query = query.filter(Vehicles.year >= request.filters["year_min"])
+                if request.filters.get("year_max"):
+                    query = query.filter(Vehicles.year <= request.filters["year_max"])
                 if request.filters.get("color"):
                     query = query.filter(Vehicles.color.ilike(f"%{request.filters['color']}%"))
                 if request.filters.get("model"):

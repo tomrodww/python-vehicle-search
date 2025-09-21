@@ -18,17 +18,32 @@ class VehicleAgent:
                 filters['brand'] = brand.lower()
                 break
 
+        color_variations = {
+            'vermelho': r'vermelh[ao]',
+            'azul': r'azul',
+            'verde': r'verde',
+            'cinza': r'cinz[ao]',
+            'preto': r'pret[ao]',
+            'branco': r'branc[ao]',
+            'prata': r'prat[ao]'
+        }
         # filter color
-        for color in COLORS:
+        for color in color_variations:
             if color.lower() in text.lower():
                 filters['color'] = color.lower()
                 break
 
         # filter year
-        if text.isdigit() and len(text) == 4:
-            year = int(text)
+        year_match = re.search(r'\b(19\d{2}|20\d{2})\b', text)
+        if year_match:
+            year = int(year_match.group(1))
             if MIN_YEAR <= year <= MAX_YEAR:
-                filters['year'] = str(year)
+                if 'até' in text.lower() or 'antes' in text.lower() or 'máximo' in text.lower():
+                    filters['year_max'] = year
+                elif 'a partir' in text.lower() or 'após' in text.lower() or 'mínimo' in text.lower():
+                    filters['year_min'] = year
+                else:
+                    filters['year'] = str(year)
         
         # filter model
         for brand, models in MODELS.items():
@@ -120,7 +135,7 @@ class VehicleAgent:
                 user_input = input("Você: ").strip().lower()
             
                 # List/show vehicles
-                if user_input in ['listar', 'mostrar', 'exibir']:
+                if user_input in ['listar', 'mostrar', 'exibir', 'buscar', 'procurar']:
                     if self.filtered_vehicles:
                         if self.filters:
                             print(f'Listando veículos filtrados por: {self.filters}')
@@ -177,12 +192,26 @@ class VehicleAgent:
                         if 'year' in self.filters and matches:
                             if str(v['year']) != self.filters['year']:
                                 matches = False
+                        if 'year_min' in self.filters and matches:
+                            if v['year'] < self.filters['year_min']:
+                                matches = False
+                        if 'year_max' in self.filters and matches:
+                            if v['year'] > self.filters['year_max']:
+                                matches = False
                         
                         if matches:
                             self.filtered_vehicles.append(v)
                 
                     print(f'Encontrei {len(self.filtered_vehicles)} veículos:')
-                    print(f'Filtros aplicados: {self.filters}')
+                    filter_display = []
+                    for key, value in self.filters.items():
+                        if key == 'year_min':
+                            filter_display.append(f"a partir de {value}")
+                        elif key == 'year_max':
+                            filter_display.append(f"até {value}")
+                        else:
+                            filter_display.append(str(value))
+                    print(f'Filtros aplicados: {", ".join(filter_display)}')
                     continue
                 else:
                     # if no filters applied, show error 
