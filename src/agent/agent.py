@@ -279,6 +279,7 @@ class VehicleAgent:
     def run(self):
         while True:
             try:
+                print("digite 'filtros' para ver os filtros disponíveis")
                 user_input = input("Você: ").strip().lower()
             
                 # List/show vehicles
