@@ -47,8 +47,16 @@ def mcp_endpoint(request: MCPRequest):
                     query = query.filter(Vehicles.sunroof == request.filters["sunroof"])
                 if request.filters.get("price"):
                     query = query.filter(Vehicles.price_cents >= request.filters["price"])
+                if request.filters.get("price_min"):
+                    query = query.filter(Vehicles.price_cents >= request.filters["price_min"])
+                if request.filters.get("price_max"):
+                    query = query.filter(Vehicles.price_cents <= request.filters["price_max"])
                 if request.filters.get("mileage"):
                     query = query.filter(Vehicles.mileage >= request.filters["mileage"])
+                if request.filters.get("mileage_min"):
+                    query = query.filter(Vehicles.mileage >= request.filters["mileage_min"])
+                if request.filters.get("mileage_max"):
+                    query = query.filter(Vehicles.mileage <= request.filters["mileage_max"])
                 
                 vehicles = query.all()
                 return MCPResponse(success=True, data=[vehicle.to_dict() for vehicle in vehicles], total=len(vehicles), message=f"Encontrei {len(vehicles)} veículos")

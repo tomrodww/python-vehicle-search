@@ -85,6 +85,44 @@ class VehicleAgent:
         if 'teto solar' in text.lower():
             filters['sunroof'] = True
 
+        # filter mileage
+        mileage_match = re.search(r'\b(\d+)\s*(?:mil\s+km|mil\s+quilômetros?|km|quilômetros?)\b', text.lower())
+        if mileage_match:
+            number = int(mileage_match.group(1))
+            unit = mileage_match.group(0).split()[-1]  # get the last word (km or quilômetros)
+            
+            # if 'mil' multiply by 1000
+            if 'mil' in mileage_match.group(0):
+                mileage = number * 1000
+            else:
+                mileage = number
+            
+            if 'até' in text.lower() or 'antes' in text.lower() or 'máximo' in text.lower():
+                filters['mileage_max'] = mileage
+            elif 'a partir' in text.lower() or 'após' in text.lower() or 'mínimo' in text.lower():
+                filters['mileage_min'] = mileage
+            else:
+                filters['mileage_max'] = mileage  # makes max as default
+
+        # filter price
+        price_match = re.search(r'\b(?:r\$\s*)?(\d+(?:\.\d{3})*(?:,\d{2})?)\s*(?:mil\s+reais?|reais?)\b', text.lower())
+        if price_match:
+            number_str = price_match.group(1).replace('.', '').replace(',', '.')
+            number = float(number_str)
+            
+            # if 'mil' multiply by 1000, also multiply by 100 to convert to cents
+            if 'mil' in price_match.group(0):
+                price = int(number * 1000 * 100)
+            else:
+                price = int(number * 100)
+            
+            if 'até' in text.lower() or 'antes' in text.lower() or 'máximo' in text.lower():
+                filters['price_max'] = price
+            elif 'a partir' in text.lower() or 'após' in text.lower() or 'mínimo' in text.lower():
+                filters['price_min'] = price
+            else:
+                filters['price_max'] = price  # makes max as default
+
         # Check if any new filters were found
         if len(filters) > 0:
             # Add new filters to existing ones
@@ -199,6 +237,28 @@ class VehicleAgent:
                             if v['year'] > self.filters['year_max']:
                                 matches = False
                         
+                        # check price filter
+                        if 'price' in self.filters and matches:
+                            if v['price_cents'] < self.filters['price']:
+                                matches = False
+                        if 'price_min' in self.filters and matches:
+                            if v['price_cents'] < self.filters['price_min']:
+                                matches = False
+                        if 'price_max' in self.filters and matches:
+                            if v['price_cents'] > self.filters['price_max']:
+                                matches = False
+                        
+                        # check mileage filter
+                        if 'mileage' in self.filters and matches:
+                            if v['mileage'] < self.filters['mileage']:
+                                matches = False
+                        if 'mileage_min' in self.filters and matches:
+                            if v['mileage'] < self.filters['mileage_min']:
+                                matches = False
+                        if 'mileage_max' in self.filters and matches:
+                            if v['mileage'] > self.filters['mileage_max']:
+                                matches = False
+                        
                         if matches:
                             self.filtered_vehicles.append(v)
                 
@@ -209,6 +269,20 @@ class VehicleAgent:
                             filter_display.append(f"a partir de {value}")
                         elif key == 'year_max':
                             filter_display.append(f"até {value}")
+                        elif key in ['price_min', 'price_max']:
+                            # Format price in cents to R$ format
+                            price_reais = value / 100
+                            formatted_price = f"R$ {price_reais:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+                            if key == 'price_min':
+                                filter_display.append(f"a partir de {formatted_price}")
+                            else:
+                                filter_display.append(f"até {formatted_price}")
+                        elif key in ['mileage_min', 'mileage_max']:
+                            # Format mileage with km
+                            if key == 'mileage_min':
+                                filter_display.append(f"a partir de {value:,} km".replace(',', '.'))
+                            else:
+                                filter_display.append(f"até {value:,} km".replace(',', '.'))
                         else:
                             filter_display.append(str(value))
                     print(f'Filtros aplicados: {", ".join(filter_display)}')
