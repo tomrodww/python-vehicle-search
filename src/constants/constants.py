@@ -1,7 +1,3 @@
-"""
-Shared constants for the Vehicle Search Application
-"""
-
 # Vehicle brands (standardized to title case)
 BRANDS = [
     'BMW', 'Honda', 'Tesla', 'Volkswagen', 'Fiat', 'Chevrolet', 

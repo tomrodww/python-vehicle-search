@@ -64,7 +64,7 @@ def mcp_endpoint(request: MCPRequest):
                 return MCPResponse(success=False, message=f"Ação desconhecida: {request.action}")
     
     except Exception as e:
-        return MCPResponse(success=False, message=f"Error: {str(e)}")
+        return MCPResponse(success=False, message=f"Erro: {str(e)}")
 
   
 if __name__ == "__main__":

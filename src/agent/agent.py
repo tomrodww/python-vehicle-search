@@ -89,7 +89,6 @@ class VehicleAgent:
         mileage_match = re.search(r'\b(\d+)\s*(?:mil\s+km|mil\s+quilômetros?|km|quilômetros?)\b', text.lower())
         if mileage_match:
             number = int(mileage_match.group(1))
-            unit = mileage_match.group(0).split()[-1]  # get the last word (km or quilômetros)
             
             # if 'mil' multiply by 1000
             if 'mil' in mileage_match.group(0):
@@ -123,29 +122,121 @@ class VehicleAgent:
             else:
                 filters['price_max'] = price  # makes max as default
 
-        # Check if any new filters were found
+        # check if new filters
         if len(filters) > 0:
-            # Add new filters to existing ones
+            # add new filters
             self.filters.update(filters)
-            return True  # Indicates new filters were applied
+            return True
         else:
-            # No new filters found, keep previous filters
-            return False  # Indicates no new filters were applied
+            return False
     
-    def search(self):
-        mcp_request = {
-            "action": "search_vehicles",
-            "filters": self.filters
+    def remove_specific_filters(self, text):
+        removed_filters = []
+        
+        # mapping portuguese words to filter
+        filter_mappings = {
+            'marca': ['brand'],
+            'modelo': ['model'],
+            'cor': ['color'],
+            'ano': ['year', 'year_min', 'year_max'],
+            'preço': ['price', 'price_min', 'price_max'],
+            'preco': ['price', 'price_min', 'price_max'],
+            'quilometragem': ['mileage', 'mileage_min', 'mileage_max'],
+            'km': ['mileage', 'mileage_min', 'mileage_max'],
+            'motor': ['engine'],
+            'transmissão': ['transmission'],
+            'combustível': ['fuel_type'],
+            'categoria': ['category'],
+            'teto solar': ['sunroof']
         }
         
-        response = requests.post(f"{API_URL}/mcp", json=mcp_request)
-        data = response.json()
+        # remove specific filters
+        for term, filter_keys in filter_mappings.items():
+            if term in text.lower():
+                for key in filter_keys:
+                    if key in self.filters:
+                        removed_filters.append(self.format_single_filter(key, self.filters[key]))
+                        del self.filters[key]
         
-        if data.get("success"):
-            return data.get("data", [])
+        return removed_filters
+    
+    def format_single_filter(self, key, value):
+        if key == 'year_min':
+            return f"a partir de {value}"
+        elif key == 'year_max':
+            return f"até {value}"
+        elif key in ['price_min', 'price_max']:
+            price_reais = value / 100
+            formatted_price = f"R$ {price_reais:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+            if key == 'price_min':
+                return f"a partir de {formatted_price}"
+            else:
+                return f"até {formatted_price}"
+        elif key in ['mileage_min', 'mileage_max']:
+            if key == 'mileage_min':
+                return f"a partir de {value:,} km".replace(',', '.')
+            else:
+                return f"até {value:,} km".replace(',', '.')
         else:
-            print(f"MCP Error: {data.get('message', 'Unknown error')}")
-            return []
+            return str(value)
+    
+    def format_filters_for_display(self):
+        filter_display = []
+        for key, value in self.filters.items():
+            formatted_value = self.format_single_filter(key, value)
+            if key == 'brand':
+                filter_display.append(f"Marca: {formatted_value.title()}")
+            elif key == 'model':
+                filter_display.append(f"Modelo: {formatted_value.title()}")
+            elif key == 'color':
+                filter_display.append(f"Cor: {formatted_value.title()}")
+            elif key == 'year':
+                filter_display.append(f"Ano: {formatted_value}")
+            elif key == 'year_min':
+                filter_display.append(f"Ano mínimo: {formatted_value}")
+            elif key == 'year_max':
+                filter_display.append(f"Ano máximo: {formatted_value}")
+            elif key == 'price_min':
+                filter_display.append(f"Preço mínimo: {formatted_value}")
+            elif key == 'price_max':
+                filter_display.append(f"Preço máximo: {formatted_value}")
+            elif key == 'mileage_min':
+                filter_display.append(f"Quilometragem mínima: {formatted_value}")
+            elif key == 'mileage_max':
+                filter_display.append(f"Quilometragem máxima: {formatted_value}")
+            elif key == 'engine':
+                filter_display.append(f"Motor: {formatted_value.title()}")
+            elif key == 'transmission':
+                filter_display.append(f"Transmissão: {formatted_value.title()}")
+            elif key == 'fuel_type':
+                filter_display.append(f"Combustível: {formatted_value.title()}")
+            elif key == 'category':
+                filter_display.append(f"Categoria: {formatted_value.title()}")
+            elif key == 'sunroof':
+                filter_display.append(f"Teto solar: {'Sim' if value else 'Não'}")
+            else:
+                filter_display.append(f"{key.title()}: {formatted_value}")
+        return filter_display
+    
+    def search_and_filter_vehicles(self):
+        try:
+            mcp_request = {
+                "action": "search_vehicles",
+                "filters": self.filters
+            }
+            
+            response = requests.post(f"{API_URL}/mcp", json=mcp_request)
+            data = response.json()
+            
+            if data.get("success"):
+                self.filtered_vehicles = data.get("data", [])
+                return True
+            else:
+                print(f"Erro: {data.get('message', 'Erro desconhecido')}")
+                return False
+        except Exception as e:
+            print(f"Erro: {e}")
+            return False
 
     def display_vehicles_table(self):
         if not self.filtered_vehicles:
@@ -153,7 +244,7 @@ class VehicleAgent:
         
         # table header
         print("\n" + "="*160)
-        print(f"{'#':<3} {'Marca':<12} {'Modelo':<15} {'Ano':<6} {'Cor':<10} {'Preço':<12} {'Combustível':<12} {'Transmissão':<12} {'Teto solar':<12} {'Categoria':<12} {'Motor':<12} {'Quilometragem':<15} ")
+        print(f"{'#':<3} {'Marca':<12} {'Modelo':<15} {'Ano':<6} {'Cor':<10} {'Preço':<12} {'Combustível':<12} {'Transmissão':<12} {'Teto solar':<12} {'Categoria':<12} {'Motor':<12} {'Quilometragem':<15}")
         print("="*160)
         
         # table rows
@@ -174,14 +265,14 @@ class VehicleAgent:
             
                 # List/show vehicles
                 if user_input in ['listar', 'mostrar', 'exibir', 'buscar', 'procurar']:
-                    if self.filtered_vehicles:
-                        if self.filters:
-                            print(f'Listando veículos filtrados por: {self.filters}')
-                        else:
-                            print('Listando todos os veículos.')
-                        self.display_vehicles_table()
+                    if self.filters:
+                        if self.search_and_filter_vehicles():
+                            print('Listando veículos filtrados por:')
+                            for filter_display in self.format_filters_for_display():
+                                print(f'  • {filter_display}')
+                            self.display_vehicles_table()
                     else:
-                        print("Nenhum veículo filtrado. Faça uma busca primeiro.")
+                        print("Nenhum filtro aplicado. Faça uma busca primeiro.")
                     continue
 
                 # reset filters
@@ -192,8 +283,20 @@ class VehicleAgent:
                     continue
 
                 # remove specific filters
-                if user_input in ['remover', 'remover filtro', 'remover filtro']:
-                    self.get_filters(user_input)
+                if any(word in user_input for word in ['limpar', 'remover', 'tirar']):
+                    removed_filters = self.remove_specific_filters(user_input)
+                    if removed_filters:
+                        print('Filtros removidos:')
+                        for removed_filter in removed_filters:
+                            print(f'  • {removed_filter}')
+                        print('Filtros restantes:')
+                        for filter_display in self.format_filters_for_display():
+                            print(f'  • {filter_display}')
+                        # search and filter again with updated filters
+                        if self.filters and self.search_and_filter_vehicles():
+                            print(f'Encontrei {len(self.filtered_vehicles)} veículos:')
+                    else:
+                        print('Nenhum filtro específico encontrado para remover.')
                     continue
 
                 # exit app
@@ -201,99 +304,25 @@ class VehicleAgent:
                     break
 
                 # apply filters
-                old_filters = self.filters.copy()
                 filters_applied = self.get_filters(user_input)
             
-                # If new filters were applied, search and filter again
+                # if new filters, search and show count
                 if filters_applied:
-                    try:
-                        vehicles = self.search()
-                    except Exception as e:
-                        print(f"Erro ao buscar veículos: {e}")
-                        continue
-                
-                    self.filtered_vehicles = []
-                    for v in vehicles:
-                        matches = True
-                        
-                        # check brand filter
-                        if 'brand' in self.filters:
-                            if v['brand'].lower() != self.filters['brand'].lower():
-                                matches = False
-                        
-                        # check color filter
-                        if 'color' in self.filters and matches:
-                            if v['color'].lower() != self.filters['color'].lower():
-                                matches = False
-                        
-                        # check year filter
-                        if 'year' in self.filters and matches:
-                            if str(v['year']) != self.filters['year']:
-                                matches = False
-                        if 'year_min' in self.filters and matches:
-                            if v['year'] < self.filters['year_min']:
-                                matches = False
-                        if 'year_max' in self.filters and matches:
-                            if v['year'] > self.filters['year_max']:
-                                matches = False
-                        
-                        # check price filter
-                        if 'price' in self.filters and matches:
-                            if v['price_cents'] < self.filters['price']:
-                                matches = False
-                        if 'price_min' in self.filters and matches:
-                            if v['price_cents'] < self.filters['price_min']:
-                                matches = False
-                        if 'price_max' in self.filters and matches:
-                            if v['price_cents'] > self.filters['price_max']:
-                                matches = False
-                        
-                        # check mileage filter
-                        if 'mileage' in self.filters and matches:
-                            if v['mileage'] < self.filters['mileage']:
-                                matches = False
-                        if 'mileage_min' in self.filters and matches:
-                            if v['mileage'] < self.filters['mileage_min']:
-                                matches = False
-                        if 'mileage_max' in self.filters and matches:
-                            if v['mileage'] > self.filters['mileage_max']:
-                                matches = False
-                        
-                        if matches:
-                            self.filtered_vehicles.append(v)
-                
-                    print(f'Encontrei {len(self.filtered_vehicles)} veículos:')
-                    filter_display = []
-                    for key, value in self.filters.items():
-                        if key == 'year_min':
-                            filter_display.append(f"a partir de {value}")
-                        elif key == 'year_max':
-                            filter_display.append(f"até {value}")
-                        elif key in ['price_min', 'price_max']:
-                            # Format price in cents to R$ format
-                            price_reais = value / 100
-                            formatted_price = f"R$ {price_reais:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-                            if key == 'price_min':
-                                filter_display.append(f"a partir de {formatted_price}")
-                            else:
-                                filter_display.append(f"até {formatted_price}")
-                        elif key in ['mileage_min', 'mileage_max']:
-                            # Format mileage with km
-                            if key == 'mileage_min':
-                                filter_display.append(f"a partir de {value:,} km".replace(',', '.'))
-                            else:
-                                filter_display.append(f"até {value:,} km".replace(',', '.'))
-                        else:
-                            filter_display.append(str(value))
-                    print(f'Filtros aplicados: {", ".join(filter_display)}')
+                    if self.search_and_filter_vehicles():
+                        print(f'Encontrei {len(self.filtered_vehicles)} veículos:')
+                        print('Filtros aplicados:')
+                        for filter_display in self.format_filters_for_display():
+                            print(f'  • {filter_display}')
                     continue
                 else:
                     # if no filters applied, show error 
                     print(f'Filtro "{user_input}" não reconhecido.')
                     print('Filtros disponíveis: marcas (BMW, Honda, etc.), cores (vermelho, azul, etc.), anos (2020-2025)')
-                    print(f'Filtros atuais mantidos: {self.filters}')
+                    print('Filtros atuais mantidos:')
+                    for filter_display in self.format_filters_for_display():
+                        print(f'  • {filter_display}')
             except Exception as e:
-                print(f'Erro: {e}')
+                print(f"Erro: {e}")
                 break
             
         

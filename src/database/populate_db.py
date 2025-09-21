@@ -48,15 +48,17 @@ def create_vehicles_db():
         
         # Count total vehicles
         total_vehicles = db.query(Vehicles).count()
-        print(f"Successfully created {total_vehicles} vehicles in the database!")
+        print(f"Sucesso! {total_vehicles} veículos criados no banco de dados!")
         
         # Display vehicles created
-        print("\nVehicles added:")
+        print("\nVeículos adicionados:")
         vehicles = db.query(Vehicles).all()
         for vehicle in vehicles:
             price_reais = vehicle.price_cents / 100
             sunroof_text = bool_to_portuguese(vehicle.sunroof)
             print(f"{vehicle.brand} {vehicle.model} {vehicle.year} - R$ {price_reais:,.0f} ({vehicle.color}) - Teto solar: {sunroof_text}")
+    except Exception as e:
+        print(f"Erro ao criar banco de dados: {e}")
     finally:
         db.close()
 

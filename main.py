@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from src.agent import VehicleAgent
 
 def main():
-    print("🚗 Starting Vehicle Search Application...")
+    print("Iniciando Aplicação de Busca de Veículos...")
     agent = VehicleAgent()
     agent.run()
 
